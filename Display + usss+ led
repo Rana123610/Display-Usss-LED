@@ -1,0 +1,152 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+Adafruit_SSD1306 display(
+  SCREEN_WIDTH,
+  SCREEN_HEIGHT,
+  &Wire,
+  -1
+);
+
+// Ultrasonic Sensor
+const int trigPin = 9;
+const int echoPin = 10;
+
+// LEDs
+const int greenLED = 2;
+const int yellowLED = 3;
+const int redLED = 4;
+
+// Buzzer
+const int buzzer = 5;
+
+void setup() {
+
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  pinMode(greenLED, OUTPUT);
+  pinMode(yellowLED, OUTPUT);
+  pinMode(redLED, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+
+  digitalWrite(trigPin, LOW);
+
+  Wire.begin();
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    while (true);
+  }
+
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+
+  display.setTextSize(2);
+  display.setCursor(0, 10);
+  display.println("I am Working");
+
+  display.setTextSize(1);
+  display.setCursor(0, 40);
+  display.println("Safety Monitor");
+
+  display.display();
+
+  delay(2000);
+}
+
+void loop() {
+
+  // Ultrasonic pulse
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+
+  digitalWrite(trigPin, LOW);
+
+  // Read sensor
+  long duration = pulseIn(echoPin, HIGH, 30000);
+
+  // Calculate distance
+  float distance = duration * 0.0343 / 2;
+
+  // Turn OFF all outputs
+  digitalWrite(greenLED, LOW);
+  digitalWrite(yellowLED, LOW);
+  digitalWrite(redLED, LOW);
+  digitalWrite(buzzer, LOW);
+
+  display.clearDisplay();
+
+  display.setTextColor(SSD1306_WHITE);
+
+  if (duration == 0) {
+
+    display.setTextSize(2);
+    display.setCursor(0, 10);
+    display.println("NO ECHO");
+
+    display.setTextSize(1);
+    display.setCursor(0, 40);
+    display.println("Check Sensor");
+
+  }
+
+  else if (distance > 50) {
+
+    digitalWrite(greenLED, HIGH);
+
+    display.setTextSize(2);
+    display.setCursor(0, 0);
+    display.println("SAFE");
+
+    display.setTextSize(1);
+    display.setCursor(0, 35);
+    display.print("Distance: ");
+    display.print(distance, 1);
+    display.print(" cm");
+
+  }
+
+  else if (distance > 20) {
+
+    digitalWrite(yellowLED, HIGH);
+
+    display.setTextSize(2);
+    display.setCursor(0, 0);
+    display.println("CAUTION");
+
+    display.setTextSize(1);
+    display.setCursor(0, 35);
+    display.print("Distance: ");
+    display.print(distance, 1);
+    display.print(" cm");
+
+  }
+
+  else {
+
+    digitalWrite(redLED, HIGH);
+    digitalWrite(buzzer, HIGH);
+
+    display.setTextSize(2);
+    display.setCursor(0, 0);
+    display.println("DANGER");
+
+    display.setTextSize(1);
+    display.setCursor(0, 35);
+    display.print("Distance: ");
+    display.print(distance, 1);
+    display.print(" cm");
+
+  }
+
+  display.display();
+
+  delay(300);
+}
